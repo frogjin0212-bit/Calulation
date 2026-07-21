@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="잔돈계산">
+<title>잔돈 계산기</title>
+<style>
+  :root{
+    --header-gray:#595959;
+    --divider-gray:#8c8c8c;
+    --band-gray:#d9d5c9;
+    --blue:#1a5fd6;
+    --red:#e0392b;
+    --border:#ddd;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0;
+    background:#f4f4f2;
+    font-family:-apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    color:#222;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  body{
+    padding:14px 10px 90px;
+  }
+  h1{
+    font-size:17px;
+    font-weight:700;
+    text-align:center;
+    margin:2px 0 12px;
+    color:#333;
+    letter-spacing:0.5px;
+  }
+  .table-wrap{
+    background:#fff;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+  }
+  col.col-amt{width:26%;}
+  col.col-cnt{width:16%;}
+  col.col-tot{width:20%;}
+  col.col-give{width:19%;}
+  col.col-change{width:19%;}
+
+  thead th{
+    background:var(--header-gray);
+    color:#fff;
+    font-size:13px;
+    font-weight:700;
+    padding:10px 4px;
+    text-align:center;
+  }
+  thead tr:first-child th{
+    border-bottom:3px solid var(--band-gray);
+  }
+
+  tbody td{
+    text-align:center;
+    padding:8px 3px;
+    font-size:14px;
+    font-weight:700;
+    border-bottom:2px solid var(--divider-gray);
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{
+    border-bottom:none;
+  }
+
+  .amt-input{
+    width:100%;
+    border:none;
+    background:transparent;
+    text-align:center;
+    font-size:14px;
+    font-weight:700;
+    color:#222;
+    font-family:inherit;
+    -webkit-user-select:text;
+    user-select:text;
+  }
+  .cnt-input{
+    width:100%;
+    border:1px solid #ccc;
+    border-radius:6px;
+    background:#fafafa;
+    text-align:center;
+    font-size:14px;
+    font-weight:700;
+    color:#222;
+    padding:5px 2px;
+    font-family:inherit;
+    -webkit-user-select:text;
+    user-select:text;
+  }
+  .cnt-input:focus, .amt-input:focus{
+    outline:2px solid #1a5fd6;
+    background:#fff;
+  }
+
+  td.summary-cell{
+    font-size:14px;
+    font-weight:800;
+    background:#fbfbfa;
+  }
+  .give-input{
+    width:100%;
+    border:1px solid #ccc;
+    border-radius:6px;
+    background:#fafafa;
+    text-align:center;
+    font-size:14px;
+    font-weight:800;
+    color:#222;
+    padding:6px 2px;
+    font-family:inherit;
+    -webkit-user-select:text;
+    user-select:text;
+  }
+  .give-input:focus{
+    outline:2px solid #1a5fd6;
+    background:#fff;
+  }
+  .change-cell{
+    font-weight:800;
+  }
+  .change-pos{ color:var(--blue); }
+  .change-neg{ color:var(--red); }
+  .change-zero{ color:#333; }
+
+  .row-del{
+    display:none;
+  }
+  .edit-mode .row-del{
+    display:inline-block;
+  }
+
+  .del-btn{
+    border:none;
+    background:#e0392b;
+    color:#fff;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    font-size:12px;
+    line-height:1;
+    font-weight:700;
+  }
+
+  .toolbar{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    padding:10px 12px calc(14px + env(safe-area-inset-bottom));
+    display:flex;
+    gap:8px;
+    justify-content:space-between;
+    background:linear-gradient(to top, #f4f4f2 60%, rgba(244,244,242,0));
+  }
+  .toolbar-left{
+    display:flex;
+    gap:8px;
+  }
+  .btn{
+    border:none;
+    border-radius:20px;
+    padding:10px 14px;
+    font-size:13px;
+    font-weight:700;
+    font-family:inherit;
+    color:#fff;
+  }
+  .btn-add{ background:#4a4a4a; }
+  .btn-edit{ background:#7a7a72; }
+  .btn-edit.active{ background:#c0392b; }
+  .btn-sort{
+    background:var(--header-gray);
+    padding:10px 18px;
+  }
+  .btn:active{ opacity:0.75; }
+
+  .reset-hint{
+    text-align:center;
+    font-size:11px;
+    color:#999;
+    margin-top:10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>잔돈 계산기</h1>
+
+<div class="table-wrap">
+  <table>
+    <colgroup>
+      <col class="col-amt"><col class="col-cnt"><col class="col-tot"><col class="col-give"><col class="col-change">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>금액</th>
+        <th>개수</th>
+        <th>총금액</th>
+        <th>준돈</th>
+        <th>잔돈</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <!-- rows injected by JS -->
+    </tbody>
+  </table>
+</div>
+
+<div class="reset-hint">개수 / 준돈을 입력하면 자동으로 계산돼요</div>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <button class="btn btn-add" id="addBtn">+ 금액 추가</button>
+    <button class="btn btn-edit" id="editBtn">삭제 모드</button>
+  </div>
+  <button class="btn btn-sort" id="sortBtn">정렬</button>
+</div>
+
+<script>
+(function(){
+  var STORAGE_KEY = 'changeCalcRows_v1';
+  var GIVE_KEY = 'changeCalcGive_v1';
+
+  var defaultRows = [
+    {amount:6000, count:''},
+    {amount:5000, count:''},
+    {amount:3000, count:''},
+    {amount:1000, count:''},
+    {amount:2000, count:''},
+    {amount:10000, count:''},
+    {amount:1200, count:''}
+  ];
+
+  function loadRows(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(Array.isArray(parsed) && parsed.length) return parsed;
+      }
+    }catch(e){}
+    return defaultRows.slice();
+  }
+
+  function saveRows(){
+    var rows = [];
+    document.querySelectorAll('#tbody tr').forEach(function(tr){
+      var amt = tr.querySelector('.amt-input').value;
+      rows.push({amount: amt, count: ''});
+    });
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); }catch(e){}
+  }
+
+  function saveGive(val){
+    try{ localStorage.setItem(GIVE_KEY, val); }catch(e){}
+  }
+  function loadGive(){
+    try{ return localStorage.getItem(GIVE_KEY) || ''; }catch(e){ return ''; }
+  }
+
+  var tbody = document.getElementById('tbody');
+  var editMode = false;
+
+  function fmt(n){
+    if(isNaN(n)) return '₩0';
+    var neg = n < 0;
+    n = Math.abs(Math.round(n));
+    var s = '₩' + n.toLocaleString('ko-KR');
+    return neg ? '(' + s + ')' : s;
+  }
+
+  function numVal(v){
+    var n = parseFloat(String(v).replace(/[^0-9.-]/g,''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function buildRow(row, isFirst){
+    var tr = document.createElement('tr');
+
+    var tdAmt = document.createElement('td');
+    var inpAmt = document.createElement('input');
+    inpAmt.className = 'amt-input';
+    inpAmt.type = 'text';
+    inpAmt.inputMode = 'numeric';
+    inpAmt.value = row.amount === '' ? '' : row.amount;
+    inpAmt.placeholder = '금액';
+    tdAmt.appendChild(inpAmt);
+    if(true){
+      var delBtn = document.createElement('button');
+      delBtn.className = 'del-btn row-del';
+      delBtn.textContent = '×';
+      delBtn.style.marginLeft = '4px';
+      delBtn.addEventListener('click', function(){
+        tr.remove();
+        recalc();
+        saveRows();
+      });
+      tdAmt.appendChild(document.createElement('br'));
+      tdAmt.appendChild(delBtn);
+    }
+    tr.appendChild(tdAmt);
+
+    var tdCnt = document.createElement('td');
+    var inpCnt = document.createElement('input');
+    inpCnt.className = 'cnt-input';
+    inpCnt.type = 'tel';
+    inpCnt.inputMode = 'numeric';
+    inpCnt.value = row.count || '';
+    inpCnt.placeholder = '0';
+    tdCnt.appendChild(inpCnt);
+    tr.appendChild(tdCnt);
+
+    inpAmt.addEventListener('input', function(){ recalc(); saveRows(); });
+    inpCnt.addEventListener('input', function(){ recalc(); saveRows(); });
+
+    if(isFirst){
+      var tdTotal = document.createElement('td');
+      tdTotal.className = 'summary-cell';
+      tdTotal.id = 'totalCell';
+      tdTotal.rowSpan = 1;
+      tdTotal.textContent = '₩0';
+      tr.appendChild(tdTotal);
+
+      var tdGive = document.createElement('td');
+      tdGive.className = 'summary-cell';
+      var inpGive = document.createElement('input');
+      inpGive.className = 'give-input';
+      inpGive.id = 'giveInput';
+      inpGive.type = 'tel';
+      inpGive.inputMode = 'numeric';
+      inpGive.placeholder = '준돈';
+      inpGive.value = loadGive();
+      tdGive.appendChild(inpGive);
+      tr.appendChild(tdGive);
+      inpGive.addEventListener('input', function(){
+        recalc();
+        saveGive(inpGive.value);
+      });
+
+      var tdChange = document.createElement('td');
+      tdChange.className = 'summary-cell change-cell change-zero';
+      tdChange.id = 'changeCell';
+      tdChange.textContent = '₩0';
+      tr.appendChild(tdChange);
+    }
+
+    return tr;
+  }
+
+  function render(){
+    tbody.innerHTML = '';
+    var rows = loadRows();
+    rows.forEach(function(row, i){
+      tbody.appendChild(buildRow(row, i === 0));
+    });
+    recalc();
+  }
+
+  function recalc(){
+    var total = 0;
+    document.querySelectorAll('#tbody tr').forEach(function(tr){
+      var amt = numVal(tr.querySelector('.amt-input').value);
+      var cntInput = tr.querySelector('.cnt-input');
+      var cnt = cntInput ? numVal(cntInput.value) : 0;
+      total += amt * cnt;
+    });
+    var totalCell = document.getElementById('totalCell');
+    if(totalCell) totalCell.textContent = fmt(total);
+
+    var giveInput = document.getElementById('giveInput');
+    var give = giveInput ? numVal(giveInput.value) : 0;
+    var change = give - total;
+
+    var changeCell = document.getElementById('changeCell');
+    if(changeCell){
+      changeCell.textContent = fmt(change);
+      changeCell.classList.remove('change-pos','change-neg','change-zero');
+      if(change > 0) changeCell.classList.add('change-pos');
+      else if(change < 0) changeCell.classList.add('change-neg');
+      else changeCell.classList.add('change-zero');
+    }
+  }
+
+  document.getElementById('addBtn').addEventListener('click', function(){
+    var isFirst = tbody.children.length === 0;
+    tbody.appendChild(buildRow({amount:'', count:''}, isFirst));
+    if(editMode){
+      tbody.lastElementChild.querySelectorAll('.row-del').forEach(function(b){ b.style.display='inline-block'; });
+    }
+    saveRows();
+  });
+
+  document.getElementById('editBtn').addEventListener('click', function(){
+    editMode = !editMode;
+    var btn = document.getElementById('editBtn');
+    btn.classList.toggle('active', editMode);
+    btn.textContent = editMode ? '완료' : '삭제 모드';
+    document.body.classList.toggle('edit-mode', editMode);
+  });
+
+  document.getElementById('sortBtn').addEventListener('click', function(){
+    var rowsData = [];
+    document.querySelectorAll('#tbody tr').forEach(function(tr, i){
+      rowsData.push({
+        amount: tr.querySelector('.amt-input').value,
+        count: tr.querySelector('.cnt-input') ? tr.querySelector('.cnt-input').value : ''
+      });
+    });
+    rowsData.sort(function(a,b){ return numVal(a.amount) - numVal(b.amount); });
+
+    tbody.innerHTML = '';
+    rowsData.forEach(function(row, i){
+      tbody.appendChild(buildRow(row, i === 0));
+    });
+    document.body.classList.toggle('edit-mode', editMode);
+    recalc();
+    saveRows();
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
