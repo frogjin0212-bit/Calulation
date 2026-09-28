@@ -170,6 +170,10 @@
     display:flex;
     gap:8px;
   }
+  .toolbar-right{
+    display:flex;
+    gap:8px;
+  }
   .btn{
     border:none;
     border-radius:20px;
@@ -182,6 +186,7 @@
   .btn-add{ background:#4a4a4a; }
   .btn-edit{ background:#7a7a72; }
   .btn-edit.active{ background:#c0392b; }
+  .btn-reset{ background:#7a7a72; }
   .btn-sort{
     background:var(--header-gray);
     padding:10px 18px;
@@ -227,7 +232,10 @@
     <button class="btn btn-add" id="addBtn">+ 금액 추가</button>
     <button class="btn btn-edit" id="editBtn">삭제 모드</button>
   </div>
-  <button class="btn btn-sort" id="sortBtn">정렬</button>
+  <div class="toolbar-right">
+    <button class="btn btn-reset" id="resetBtn">리셋</button>
+    <button class="btn btn-sort" id="sortBtn">정렬</button>
+  </div>
 </div>
 
 <script>
@@ -410,6 +418,14 @@
     btn.classList.toggle('active', editMode);
     btn.textContent = editMode ? '완료' : '삭제 모드';
     document.body.classList.toggle('edit-mode', editMode);
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    document.querySelectorAll('.cnt-input').forEach(function(input){
+      input.value = 0;
+    });
+    recalc();
+    saveRows();
   });
 
   document.getElementById('sortBtn').addEventListener('click', function(){
