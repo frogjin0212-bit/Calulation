@@ -422,7 +422,7 @@
 
   document.getElementById('resetBtn').addEventListener('click', function(){
     document.querySelectorAll('.cnt-input').forEach(function(input){
-      input.value = 0;
+      input.value = '';
     });
     recalc();
     saveRows();
